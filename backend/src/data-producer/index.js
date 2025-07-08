@@ -1,6 +1,6 @@
 import { createReadStream } from "fs";
 import { createInterface } from "readline";
-import { TOPIC_TO_BE_PRODUCED_TO } from "../constants.js";
+import { RAW_DATA_TOPIC } from "../constants.js";
 import { producer } from "../lib/kafka.js";
 import { rawDataAvroType } from "../lib/avro.js";
 import { timeAndDateStringToTimestamp } from "../lib/time.js";
@@ -53,7 +53,7 @@ const main = async () => {
       // Produce datapoints in batches to improve performance
       if (datapoints.length % PRODUCE_DATA_BATCH_SIZE === 0) {
         const messages = datapointsToAvro(datapoints);
-        await producer.send({ topic: TOPIC_TO_BE_PRODUCED_TO, messages });
+        await producer.send({ topic: RAW_DATA_TOPIC, messages });
         datapoints = [];
       }
 
@@ -69,7 +69,7 @@ const main = async () => {
     // Produce the rest of the data points
     if (datapoints.length > 0) {
       const messages = datapointsToAvro(datapoints);
-      await producer.send({ topic: TOPIC_TO_BE_PRODUCED_TO, messages });
+      await producer.send({ topic: RAW_DATA_TOPIC, messages });
     }
   } catch (e) {
     console.log("Error in data-producer:", e);

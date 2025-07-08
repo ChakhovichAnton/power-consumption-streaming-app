@@ -1,5 +1,5 @@
 import { admin } from "./lib/kafka.js";
-import { TOPIC_TO_BE_PRODUCED_TO } from "./constants.js";
+import { RAW_DATA_TOPIC } from "./constants.js";
 
 const REPLICATION_FACTOR = 1;
 const PARTITION_COUNT = 1;
@@ -20,13 +20,13 @@ export const main = async () => {
       existingTopicsSet.clear();
     }
 
-    if (!existingTopicsSet.has(TOPIC_TO_BE_PRODUCED_TO)) {
-      console.log(`Creating topic: ${TOPIC_TO_BE_PRODUCED_TO}`);
+    if (!existingTopicsSet.has(RAW_DATA_TOPIC)) {
+      console.log(`Creating topic: ${RAW_DATA_TOPIC}`);
 
       await admin.createTopics({
         topics: [
           {
-            topic: TOPIC_TO_BE_PRODUCED_TO,
+            topic: RAW_DATA_TOPIC,
             replicationFactor: REPLICATION_FACTOR,
             numPartitions: PARTITION_COUNT,
           },
