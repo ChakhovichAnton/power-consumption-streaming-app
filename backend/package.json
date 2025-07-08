@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "data-producer": "node src/data-producer/index.js",
+    "provision-kafka": "node src/provisionKafka.js"
+  },
+  "dependencies": {
+    "avsc": "^5.7.8",
+    "kafkajs": "^2.2.4"
+  }
+}
