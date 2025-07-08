@@ -11,7 +11,7 @@ export const main = async () => {
 
   try {
     const existingTopics = await admin.listTopics();
-    const existingTopicsSet = new Set([...existingTopics]);
+    const existingTopicsSet = new Set(existingTopics);
     console.log(`Existing topics: ${existingTopics}`);
 
     if (RECREATE_ALL_TOPICS) {
