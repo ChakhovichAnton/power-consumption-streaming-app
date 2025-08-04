@@ -23,6 +23,63 @@ services:
     volumes:
       - kafka_data:/tmp/bitnami/kafka
 
+  database:
+    image: postgres:17
+    container_name: postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  jobmanager:
+    container_name: jobmanager
+    image: pyflink:latest
+    pull_policy: never
+    expose:
+      - "6123"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    command: jobmanager
+    volumes:
+      - ./flink-stream-app:/flink-stream-app
+      - flink_checkpoints:/flink-checkpoints
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    env_file:
+      - .env
+
+  taskmanager:
+    container_name: taskmanager
+    image: pyflink:latest
+    pull_policy: never
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    volumes:
+      - flink_checkpoints:/flink-checkpoints
+    links:
+      - "jobmanager:jobmanager"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 3
+    env_file:
+      - .env
+
 volumes:
   kafka_data:
     driver: local
+  flink_checkpoints:
+    driver: local
+  postgres_data:
