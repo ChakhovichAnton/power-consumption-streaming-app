@@ -7,12 +7,14 @@
   "type": "module",
   "scripts": {
     "data-producer": "node src/data-producer/index.js",
+    "power-consumption-api": "node src/power-consumption-api/index.js",
     "provision-kafka": "node src/provisionKafka.js",
     "provision-postgres": "node src/provisionPostgreSQL.js"
   },
   "dependencies": {
     "avsc": "^5.7.8",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "kafkajs": "^2.2.4",
     "pg": "^8.16.3"
   }
