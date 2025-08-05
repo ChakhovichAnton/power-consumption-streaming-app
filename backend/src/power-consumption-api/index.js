@@ -1,10 +1,12 @@
 import express from "express";
 import * as http from "http";
 import { postgrePool } from "./../lib/postgres.js";
+import cors from "cors";
 
 const PORT = 3000;
 
 const app = express();
+app.use(cors());
 
 const server = http.createServer(app);
 
