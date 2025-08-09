@@ -1,15 +1,27 @@
 import logging
 import sys
 
-from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic
-from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer
+from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic, FlatMapFunction
+from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer, FlinkKafkaProducer
 from pyflink.datastream.connectors.jdbc import JdbcSink
-from pyflink.datastream.formats.avro import AvroRowDeserializationSchema
+from pyflink.datastream.formats.avro import AvroRowDeserializationSchema, AvroRowSerializationSchema
 from pyflink.common import Duration
 from pyflink.common.watermark_strategy import TimestampAssigner, WatermarkStrategy
 
 from utils import kafka, avro, flink_types, postgres, jdbc
 from pipelines import hourly_power_consumption_data
+
+class FilterEventsWithNullValues(FlatMapFunction):
+    def flat_map(self, value):
+        if (value.globalActivePower is not None and
+            value.globalReactivePower is not None and
+            value.voltage is not None and
+            value.globalIntensity is not None and
+            value.subMetering1 is not None and
+            value.subMetering2 is not None and
+            value.subMetering3 is not None
+        ):
+            yield value
 
 class ProcessedDataTimestampAssigner(TimestampAssigner):
     def extract_timestamp(self, value, record_timestamp):
@@ -52,7 +64,26 @@ if __name__ == "__main__":
         .assign_timestamps_and_watermarks(watermark_strategy)
         .name("Assign watermarks")
     )
-    hourly_power_consumption_data.handle_stream(source_stream)
+
+    # Remove events with null values
+    null_events_removed_stream = source_stream.flat_map(
+        FilterEventsWithNullValues(),
+        output_type=flink_types.RAW_EVENT_TYPE,
+    ).name("FlatMap: remove events with null values")
+
+    # Transform data into hourly aggregated data
+    hourly_power_consumption_data.handle_stream(null_events_removed_stream)
+
+    # Send the streamed data to a Kafka topic
+    serialization_schema = AvroRowSerializationSchema(
+        avro_schema_string=avro.NOT_NULL_DATA_SCHEMA
+    )
+    kafka_producer = FlinkKafkaProducer(
+        topic=kafka.LIVE_DATA_KAFKA_TOPIC,
+        serialization_schema=serialization_schema,
+        producer_config=kafka.KAFKA_PROPERTIES,
+    )
+    null_events_removed_stream.add_sink(kafka_producer).name("Kafka producer")
 
     # Save incoming raw data to Postgres
     postgres_sink = JdbcSink.sink(
@@ -60,6 +91,6 @@ if __name__ == "__main__":
         flink_types.RAW_EVENT_TYPE,
         jdbc.jdbc_connection_options,
     )
-    source_stream.add_sink(postgres_sink).name("Postgres sink")
+    null_events_removed_stream.add_sink(postgres_sink).name("Raw data Postgres sink")
 
     env.execute("flink-stream-app")

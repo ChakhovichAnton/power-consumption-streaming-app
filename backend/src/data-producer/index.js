@@ -5,6 +5,10 @@ import { producer } from "../lib/kafka.js";
 import { rawDataAvroType } from "../lib/avro.js";
 import { timeAndDateStringToTimestamp } from "../lib/time.js";
 
+const toNumberOrNull = (string) => {
+  return string.trim() === "" || isNaN(Number(string)) ? null : Number(string);
+};
+
 const datapointsToAvro = (datapoints) => {
   return datapoints.map((datapoint) => {
     return { value: rawDataAvroType.toBuffer(datapoint) };
@@ -30,8 +34,8 @@ const main = async () => {
     for await (const line of readLineInterface) {
       const lineArray = line.split(";");
 
-      // Skip the line with the header
-      if (lineArray[0] === "Date") continue;
+      // Skip the line with the header and empty lines
+      if (lineArray[0] === "Date" || line.trim() === "") continue;
 
       const timestamp = timeAndDateStringToTimestamp(
         lineArray[0],
@@ -40,13 +44,13 @@ const main = async () => {
 
       const data = {
         timestamp,
-        globalActivePower: Number(lineArray[2]),
-        globalReactivePower: Number(lineArray[3]),
-        voltage: Number(lineArray[4]),
-        globalIntensity: Number(lineArray[5]),
-        subMetering1: Number(lineArray[6]),
-        subMetering2: Number(lineArray[7]),
-        subMetering3: Number(lineArray[8]),
+        globalActivePower: toNumberOrNull(lineArray[2]),
+        globalReactivePower: toNumberOrNull(lineArray[3]),
+        voltage: toNumberOrNull(lineArray[4]),
+        globalIntensity: toNumberOrNull(lineArray[5]),
+        subMetering1: toNumberOrNull(lineArray[6]),
+        subMetering2: toNumberOrNull(lineArray[7]),
+        subMetering3: toNumberOrNull(lineArray[8]),
       };
       datapoints.push(data);
 
