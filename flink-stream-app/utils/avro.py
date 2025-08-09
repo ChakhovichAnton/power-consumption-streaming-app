@@ -3,7 +3,10 @@ RAW_DATA_SCHEMA = """
   "name": "PowerConsumptionData",
   "type": "record",
   "fields": [
-    { "name": "timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    {
+      "name": "timestamp",
+      "type": { "type": "long", "logicalType": "timestamp-millis" }
+    },
     { "name": "globalActivePower", "type": "float" },
     { "name": "globalReactivePower", "type": "float" },
     { "name": "voltage", "type": "float" },

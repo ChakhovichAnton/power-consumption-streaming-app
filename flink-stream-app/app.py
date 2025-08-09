@@ -3,10 +3,17 @@ import sys
 
 from pyflink.datastream import StreamExecutionEnvironment, TimeCharacteristic
 from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer
-from pyflink.datastream.connectors.jdbc import JdbcSink, JdbcConnectionOptions
+from pyflink.datastream.connectors.jdbc import JdbcSink
 from pyflink.datastream.formats.avro import AvroRowDeserializationSchema
+from pyflink.common import Duration
+from pyflink.common.watermark_strategy import TimestampAssigner, WatermarkStrategy
 
-from utils import kafka, avro, flink_types, postgres
+from utils import kafka, avro, flink_types, postgres, jdbc
+from pipelines import hourly_power_consumption_data
+
+class ProcessedDataTimestampAssigner(TimestampAssigner):
+    def extract_timestamp(self, value, record_timestamp):
+        return int(value["timestamp"].timestamp() * 1000)
 
 def enable_checkpoints(env):
     env.enable_checkpointing(10 * 1000) # start a checkpoint every 10 seconds
@@ -33,20 +40,26 @@ if __name__ == "__main__":
     )
     consumer.set_start_from_earliest()
 
-    # Start consuming and assign the watermark
-    source_stream = env.add_source(consumer).name("Raw event from Kafka")
+    # Create the watermark strategy
+    watermark_strategy = WatermarkStrategy.for_bounded_out_of_orderness(
+        Duration.of_seconds(10)
+    ).with_timestamp_assigner(ProcessedDataTimestampAssigner())
 
+    # Start consuming
+    source_stream = (
+        env.add_source(consumer)
+        .name("Raw event from Kafka")
+        .assign_timestamps_and_watermarks(watermark_strategy)
+        .name("Assign watermarks")
+    )
+    hourly_power_consumption_data.handle_stream(source_stream)
+
+    # Save incoming raw data to Postgres
     postgres_sink = JdbcSink.sink(
         postgres.POWER_CONSUMPTION_DATA_INSERTION_QUERY,
         flink_types.RAW_EVENT_TYPE,
-        JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-            .with_url(postgres.POSTGRES_URL)
-            .with_driver_name(postgres.POSTGRES_DRIVER)
-            .with_user_name(postgres.POSTGRES_USER)
-            .with_password(postgres.POSTGRES_PASSWORD)
-            .build(),
+        jdbc.jdbc_connection_options,
     )
-
     source_stream.add_sink(postgres_sink).name("Postgres sink")
 
     env.execute("flink-stream-app")

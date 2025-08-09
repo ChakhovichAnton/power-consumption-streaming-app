@@ -10,11 +10,25 @@ INSERT INTO power_consumption_data (
     subMetering1,
     subMetering2,
     subMetering3
-) values (?, ?, ?, ?, ?, ?, ?, ?)"""
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
 
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
-POSTGRES_USER = os.environ.get("POSTGRES_USER")
-POSTGRES_DB = os.environ.get("POSTGRES_DB")
+HOURLY_POWER_CONSUMPTION_DATA_INSERTION_QUERY = """
+INSERT INTO hourly_power_consumption_data (
+    eventCount,
+    timestampStart,
+    timestampEnd,
+    globalActivePowerAverage,
+    globalReactivePowerAverage,
+    voltageAverage,
+    globalIntensityAverage,
+    subMetering1Average,
+    subMetering2Average,
+    subMetering3Average
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+POSTGRES_USER = os.environ.get('POSTGRES_USER')
+POSTGRES_DB = os.environ.get('POSTGRES_DB')
 POSTGRES_DRIVER = 'org.postgresql.Driver'
 POSTGRES_PORT = 5432
 POSTGRES_URL = f'jdbc:postgresql://postgres:{POSTGRES_PORT}/{POSTGRES_DB}'
