@@ -52,6 +52,11 @@ Start the power consumption API in the `backend` directory with:
 npm run power-consumption-api
 ```
 
+Start the frontend in the `frontend` directory with:
+```bash
+npm run dev
+```
+
 To test the system, one must producer messages. The producer can be started in the `backend` directory with:
 ```bash
 npm run data-producer
