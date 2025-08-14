@@ -21,7 +21,10 @@ import {
 import Selector from "./Selector";
 import type { PowerConsumptionDataGranularity } from "../types";
 import DateSelector from "./DateSelector";
-import { powerConsumptionDataToChartDataset } from "../utils/chart";
+import {
+  POWER_CONSUMPTION_CHART_ATTRIBUTES,
+  powerConsumptionDataToChartDataset,
+} from "../utils/chart";
 import { newDateWithADayAdded } from "../utils/date";
 
 ChartJS.register(
@@ -105,11 +108,33 @@ const Chart = () => {
             x: {
               type: "time",
               time: { unit: "minute" },
-              title: { display: true, text: "Date" },
+              title: { display: true, text: "Time" },
             },
-            y: {
-              title: { display: true, text: "Value" },
-            },
+            ...Object.assign(
+              {},
+              ...POWER_CONSUMPTION_CHART_ATTRIBUTES.map(({ yAxis }) => {
+                return {
+                  [yAxis.key]: {
+                    type: "linear",
+                    position: "left",
+                    display: ({ scale }: { scale: LinearScale }) => {
+                      const datasets = scale.chart.data
+                        .datasets as ChartDataset<"line">[];
+
+                      return datasets.some(
+                        (d, index) =>
+                          d.yAxisID === yAxis.key &&
+                          scale.chart.isDatasetVisible(index)
+                      );
+                    },
+                    title: {
+                      display: true,
+                      text: yAxis.text,
+                    },
+                  },
+                };
+              })
+            ),
           },
         }}
       />
