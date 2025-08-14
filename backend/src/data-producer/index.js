@@ -44,13 +44,13 @@ const main = async () => {
 
       const data = {
         timestamp,
-        globalActivePower: toNumberOrNull(lineArray[2]),
-        globalReactivePower: toNumberOrNull(lineArray[3]),
+        global_active_power: toNumberOrNull(lineArray[2]),
+        global_reactive_power: toNumberOrNull(lineArray[3]),
         voltage: toNumberOrNull(lineArray[4]),
-        globalIntensity: toNumberOrNull(lineArray[5]),
-        subMetering1: toNumberOrNull(lineArray[6]),
-        subMetering2: toNumberOrNull(lineArray[7]),
-        subMetering3: toNumberOrNull(lineArray[8]),
+        global_intensity: toNumberOrNull(lineArray[5]),
+        submetering1: toNumberOrNull(lineArray[6]),
+        submetering2: toNumberOrNull(lineArray[7]),
+        submetering3: toNumberOrNull(lineArray[8]),
       };
       datapoints.push(data);
 

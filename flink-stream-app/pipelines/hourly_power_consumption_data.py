@@ -13,49 +13,48 @@ def select_latest(timestamp1: datetime, timestamp2: datetime):
 def select_oldest(timestamp1: datetime, timestamp2: datetime):
     return timestamp1 if timestamp1 <= timestamp2 else timestamp2
 
-
 class FilterEmptyHourlyEvents(FlatMapFunction):
     def flat_map(self, value):
-        if value.eventCount > 0:
+        if value.event_count > 0:
             yield value
 
 class HourlyPowerConsumptionAggregate(AggregateFunction):
     def create_accumulator(self):
         return Row(
-            eventCount=0,
-            timestampStart=datetime.now(),
-            timestampEnd=datetime.now(),
-            globalActivePowerSum=0,
-            globalReactivePowerSum=0,
-            voltageSum=0,
-            globalIntensitySum=0,
-            subMetering1Sum=0,
-            subMetering2Sum=0,
-            subMetering3Sum=0
+            event_count=0,
+            timestamp_start=datetime.now(),
+            timestamp_end=datetime.now(),
+            global_active_power_sum=0,
+            global_reactive_power_sum=0,
+            voltage_sum=0,
+            global_intensity_sum=0,
+            submetering1_sum=0,
+            submetering2_sum=0,
+            submetering3_sum=0
         )
 
     def add(self, value, accumulator):
-        is_first_event = accumulator.eventCount < 1
+        is_first_event = accumulator.event_count < 1
 
         return Row(
-            eventCount=accumulator.eventCount + 1,
-            timestampStart=(
+            event_count=accumulator.event_count + 1,
+            timestamp_start=(
                 value.timestamp
                 if is_first_event
-                else select_oldest(accumulator.timestampStart, value.timestamp) # In-case the events are in the wrong order
+                else select_oldest(accumulator.timestamp_start, value.timestamp) # In-case the events are in the wrong order
             ),
-            timestampEnd=(
+            timestamp_end=(
                 value.timestamp
                 if is_first_event
-                else select_latest(value.timestamp, accumulator.timestampEnd) # In-case the events are in the wrong order
+                else select_latest(value.timestamp, accumulator.timestamp_end) # In-case the events are in the wrong order
             ),
-            globalActivePowerSum=accumulator.globalActivePowerSum + value.globalActivePower,
-            globalReactivePowerSum=accumulator.globalReactivePowerSum + value.globalReactivePower,
-            voltageSum=accumulator.voltageSum + value.voltage,
-            globalIntensitySum=accumulator.globalIntensitySum + value.globalIntensity,
-            subMetering1Sum=accumulator.subMetering1Sum + value.subMetering1,
-            subMetering2Sum=accumulator.subMetering2Sum + value.subMetering2,
-            subMetering3Sum=accumulator.subMetering3Sum + value.subMetering3
+            global_active_power_sum=accumulator.global_active_power_sum + value.global_active_power,
+            global_reactive_power_sum=accumulator.global_reactive_power_sum + value.global_reactive_power,
+            voltage_sum=accumulator.voltage_sum + value.voltage,
+            global_intensity_sum=accumulator.global_intensity_sum + value.global_intensity,
+            submetering1_sum=accumulator.submetering1_sum + value.submetering1,
+            submetering2_sum=accumulator.submetering2_sum + value.submetering2,
+            submetering3_sum=accumulator.submetering3_sum + value.submetering3
         )
 
     def get_result(self, accumulator):
@@ -64,36 +63,36 @@ class HourlyPowerConsumptionAggregate(AggregateFunction):
             return 0 if divisor == 0 else divident / divisor
 
         return Row(
-            eventCount=accumulator.eventCount,
-            timestampStart=accumulator.timestampStart,
-            timestampEnd=accumulator.timestampEnd,
-            globalActivePowerAverage=safe_division(accumulator.globalActivePowerSum, accumulator.eventCount),
-            globalReactivePowerAverage=safe_division(accumulator.globalReactivePowerSum, accumulator.eventCount),
-            voltageAverage=safe_division(accumulator.voltageSum, accumulator.eventCount),
-            globalIntensityAverage=safe_division(accumulator.globalIntensitySum, accumulator.eventCount),
-            subMetering1Average=safe_division(accumulator.subMetering1Sum, accumulator.eventCount),
-            subMetering2Average=safe_division(accumulator.subMetering2Sum, accumulator.eventCount),
-            subMetering3Average=safe_division(accumulator.subMetering3Sum, accumulator.eventCount)
+            event_count=accumulator.event_count,
+            timestamp_start=accumulator.timestamp_start,
+            timestamp_end=accumulator.timestamp_end,
+            global_active_power_avg=safe_division(accumulator.global_active_power_sum, accumulator.event_count),
+            global_reactive_power_avg=safe_division(accumulator.global_reactive_power_sum, accumulator.event_count),
+            voltage_avg=safe_division(accumulator.voltage_sum, accumulator.event_count),
+            global_intensity_avg=safe_division(accumulator.global_intensity_sum, accumulator.event_count),
+            submetering1_avg=safe_division(accumulator.submetering1_sum, accumulator.event_count),
+            submetering2_avg=safe_division(accumulator.submetering2_sum, accumulator.event_count),
+            submetering3_avg=safe_division(accumulator.submetering3_sum, accumulator.event_count)
         )
 
     def merge(self, a, b):
         # If a or b has no events, return the other one
-        if a.eventCount < 1:
+        if a.event_count < 1:
             return b
-        elif b.eventCount < 1:
+        elif b.event_count < 1:
             return a
 
         return Row(
-            eventCount=a.eventCount + b.eventCount,
-            timestampStart=select_oldest(a.timestampStart, b.timestampStart),
-            timestampEnd=select_latest(a.timestampEnd, b.timestampEnd),
-            globalActivePowerSum=a.globalActivePowerSum + b.globalActivePowerSum,
-            globalReactivePowerSum=a.globalReactivePowerSum + b.globalReactivePowerSum,
-            voltageSum=a.voltageSum + b.voltageSum,
-            globalIntensitySum=a.globalIntensitySum + b.globalIntensitySum,
-            subMetering1Sum=a.subMetering1Sum + b.subMetering1Sum,
-            subMetering2Sum=a.subMetering2Sum + b.subMetering2Sum,
-            subMetering3Sum=a.subMetering3Sum + b.subMetering3Sum
+            event_count=a.event_count + b.event_count,
+            timestamp_start=select_oldest(a.timestamp_start, b.timestamp_start),
+            timestamp_end=select_latest(a.timestamp_end, b.timestamp_end),
+            global_active_power_sum=a.global_active_power_sum + b.global_active_power_sum,
+            global_reactive_power_sum=a.global_reactive_power_sum + b.global_reactive_power_sum,
+            voltage_sum=a.voltage_sum + b.voltage_sum,
+            global_intensity_sum=a.global_intensity_sum + b.global_intensity_sum,
+            submetering1_sum=a.submetering1_sum + b.submetering1_sum,
+            submetering2_sum=a.submetering2_sum + b.submetering2_sum,
+            submetering3_sum=a.submetering3_sum + b.submetering3_sum
         )
 
 def handle_stream(input_stream: DataStream):

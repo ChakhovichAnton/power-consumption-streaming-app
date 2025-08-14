@@ -3,27 +3,27 @@ import os
 POWER_CONSUMPTION_DATA_INSERTION_QUERY = """
 INSERT INTO power_consumption_data (
     timestamp,
-    globalActivePower,
-    globalReactivePower,
+    global_active_power,
+    global_reactive_power,
     voltage,
-    globalIntensity,
-    subMetering1,
-    subMetering2,
-    subMetering3
+    global_intensity,
+    submetering1,
+    submetering2,
+    submetering3
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
 
 HOURLY_POWER_CONSUMPTION_DATA_INSERTION_QUERY = """
 INSERT INTO hourly_power_consumption_data (
-    eventCount,
-    timestampStart,
-    timestampEnd,
-    globalActivePowerAverage,
-    globalReactivePowerAverage,
-    voltageAverage,
-    globalIntensityAverage,
-    subMetering1Average,
-    subMetering2Average,
-    subMetering3Average
+    event_count,
+    timestamp_start,
+    timestamp_end,
+    global_active_power_avg,
+    global_reactive_power_avg,
+    voltage_avg,
+    global_intensity_avg,
+    submetering1_avg,
+    submetering2_avg,
+    submetering3_avg
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
 POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')

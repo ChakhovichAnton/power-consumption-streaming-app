@@ -4,29 +4,29 @@ const CREATE_TABLE_POWER_CONSUMPTION_QUERY = `
 CREATE TABLE IF NOT EXISTS power_consumption_data (
   id SERIAL PRIMARY KEY,
   timestamp TIMESTAMP NOT NULL,
-  globalActivePower REAL,
-  globalReactivePower REAL,
+  global_active_power REAL,
+  global_reactive_power REAL,
   voltage REAL,
-  globalIntensity REAL,
-  subMetering1 REAL,
-  subMetering2 REAL,
-  subMetering3 REAL
+  global_intensity REAL,
+  submetering1 REAL,
+  submetering2 REAL,
+  submetering3 REAL
 );
 `;
 
 const CREATE_TABLE_HOURLY_POWER_CONSUMPTION_QUERY = `
 CREATE TABLE IF NOT EXISTS hourly_power_consumption_data (
   id SERIAL PRIMARY KEY,
-  eventCount INTEGER,
-  timestampStart TIMESTAMP NOT NULL,
-  timestampEnd TIMESTAMP NOT NULL,
-  globalActivePowerAverage REAL,
-  globalReactivePowerAverage REAL,
-  voltageAverage REAL,
-  globalIntensityAverage REAL,
-  subMetering1Average REAL,
-  subMetering2Average REAL,
-  subMetering3Average REAL
+  event_count INTEGER,
+  timestamp_start TIMESTAMP NOT NULL,
+  timestamp_end TIMESTAMP NOT NULL,
+  global_active_power_avg REAL,
+  global_reactive_power_avg REAL,
+  voltage_avg REAL,
+  global_intensity_avg REAL,
+  submetering1_avg REAL,
+  submetering2_avg REAL,
+  submetering3_avg REAL
 );
 `;
 

@@ -7,13 +7,13 @@ RAW_DATA_SCHEMA = """
       "name": "timestamp",
       "type": { "type": "long", "logicalType": "timestamp-millis" }
     },
-    { "name": "globalActivePower", "type": ["null", "float"] },
-    { "name": "globalReactivePower", "type": ["null", "float"] },
+    { "name": "global_active_power", "type": ["null", "float"] },
+    { "name": "global_reactive_power", "type": ["null", "float"] },
     { "name": "voltage", "type": ["null", "float"] },
-    { "name": "globalIntensity", "type": ["null", "float"] },
-    { "name": "subMetering1", "type": ["null", "float"] },
-    { "name": "subMetering2", "type": ["null", "float"] },
-    { "name": "subMetering3", "type": ["null", "float"] }
+    { "name": "global_intensity", "type": ["null", "float"] },
+    { "name": "submetering1", "type": ["null", "float"] },
+    { "name": "submetering2", "type": ["null", "float"] },
+    { "name": "submetering3", "type": ["null", "float"] }
   ]
 }
 """
@@ -27,13 +27,13 @@ NOT_NULL_DATA_SCHEMA = """
       "name": "timestamp",
       "type": { "type": "long", "logicalType": "timestamp-millis" }
     },
-    { "name": "globalActivePower", "type": "float" },
-    { "name": "globalReactivePower", "type": "float" },
+    { "name": "global_active_power", "type": "float" },
+    { "name": "global_reactive_power", "type": "float" },
     { "name": "voltage", "type": "float" },
-    { "name": "globalIntensity", "type": "float" },
-    { "name": "subMetering1", "type": "float" },
-    { "name": "subMetering2", "type": "float" },
-    { "name": "subMetering3", "type": "float" }
+    { "name": "global_intensity", "type": "float" },
+    { "name": "submetering1", "type": "float" },
+    { "name": "submetering2", "type": "float" },
+    { "name": "submetering3", "type": "float" }
   ]
 }
 """

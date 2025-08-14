@@ -13,13 +13,13 @@ from pipelines import hourly_power_consumption_data
 
 class FilterEventsWithNullValues(FlatMapFunction):
     def flat_map(self, value):
-        if (value.globalActivePower is not None and
-            value.globalReactivePower is not None and
+        if (value.global_active_power is not None and
+            value.global_reactive_power is not None and
             value.voltage is not None and
-            value.globalIntensity is not None and
-            value.subMetering1 is not None and
-            value.subMetering2 is not None and
-            value.subMetering3 is not None
+            value.global_intensity is not None and
+            value.submetering1 is not None and
+            value.submetering2 is not None and
+            value.submetering3 is not None
         ):
             yield value
 

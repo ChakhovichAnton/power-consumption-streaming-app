@@ -47,6 +47,11 @@ Run the flink-stream-app with:
 docker exec -it jobmanager flink run -py /flink-stream-app/app.py --pyFiles /flink-stream-app
 ```
 
+Start the power consumption API in the `backend` directory with:
+```bash
+npm run power-consumption-api
+```
+
 To test the system, one must producer messages. The producer can be started in the `backend` directory with:
 ```bash
 npm run data-producer

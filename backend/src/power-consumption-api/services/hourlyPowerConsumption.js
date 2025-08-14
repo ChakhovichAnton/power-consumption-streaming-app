@@ -4,8 +4,8 @@ export const getHourlyConsumption = async (startISOString, endISOString, limit, 
   const query = `
   SELECT *
   FROM hourly_power_consumption_data
-  WHERE timestampStart >= $1 AND timestampEnd <= $2
-  ORDER BY timestampStart
+  WHERE timestamp_start >= $1 AND timestamp_end <= $2
+  ORDER BY timestamp_start
   LIMIT $3 OFFSET $4;`;
 
   return await postgrePool.query(query, [
@@ -21,15 +21,15 @@ export const getLatestHourlyConsumption = async () => {
   SELECT *
   FROM hourly_power_consumption_data
   WHERE
-    timestampStart >= (
-      SELECT MAX(timestampEnd) - INTERVAL '24 hours'
+    timestamp_start >= (
+      SELECT MAX(timestamp_end) - INTERVAL '24 hours'
       FROM hourly_power_consumption_data
     ) AND
-    timestampEnd <= (
-      SELECT MAX(timestampEnd)
+    timestamp_end <= (
+      SELECT MAX(timestamp_end)
       FROM hourly_power_consumption_data
     )
-  ORDER BY timestampStart;`;
+  ORDER BY timestamp_start;`;
 
   return await postgrePool.query(query);
 };

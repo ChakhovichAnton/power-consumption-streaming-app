@@ -11,6 +11,7 @@ import {
   getHourlyConsumption,
   getLatestHourlyConsumption,
 } from "./../services/hourlyPowerConsumption.js";
+import { snakeToCamel } from "./../../lib/snakeToCamelCase.js";
 
 export const getPowerConsumption = async (req, res) => {
   const {
@@ -45,7 +46,7 @@ export const getPowerConsumption = async (req, res) => {
     parseInt(offset)
   );
 
-  res.json({ count: result.rows.length, data: result.rows });
+  res.json({ count: result.rows.length, data: result.rows.map(snakeToCamel) });
 };
 
 export const getDatesWithPowerConsumptionData = async (req, res) => {
@@ -82,5 +83,5 @@ export const getLatestPowerConsumptionData = async (req, res) => {
     granularity === "hour" ? getLatestHourlyConsumption : getLatestConsumption;
 
   const result = await consumptionFunction();
-  res.send({ count: result.rows.length, data: result.rows });
+  res.send({ count: result.rows.length, data: result.rows.map(snakeToCamel) });
 };

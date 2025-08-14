@@ -3,13 +3,13 @@ from pyflink.common import Types
 RAW_EVENT_TYPE = Types.ROW_NAMED(
     [
         "timestamp",
-        "globalActivePower",
-        "globalReactivePower",
+        "global_active_power",
+        "global_reactive_power",
         "voltage",
-        "globalIntensity",
-        "subMetering1",
-        "subMetering2",
-        "subMetering3",
+        "global_intensity",
+        "submetering1",
+        "submetering2",
+        "submetering3",
     ],
     [
         Types.SQL_TIMESTAMP(),
@@ -25,16 +25,16 @@ RAW_EVENT_TYPE = Types.ROW_NAMED(
 
 ACCUMULATOR_EVENT_TYPE = Types.ROW_NAMED(
     [
-        "eventCount",
-        "timestampStart",
-        "timestampEnd",
-        "globalActivePowerSum",
-        "globalReactivePowerSum",
-        "voltageSum",
-        "globalIntensitySum",
-        "subMetering1Sum",
-        "subMetering2Sum",
-        "subMetering3Sum",
+        "event_count",
+        "timestamp_start",
+        "timestamp_end",
+        "global_active_power_sum",
+        "global_reactive_power_sum",
+        "voltage_sum",
+        "global_intensity_sum",
+        "submetering1_sum",
+        "submetering2_sum",
+        "submetering3_sum",
     ],
     [
         Types.INT(),
@@ -52,16 +52,16 @@ ACCUMULATOR_EVENT_TYPE = Types.ROW_NAMED(
 
 HOURLY_EVENT_TYPE = Types.ROW_NAMED(
     [
-        "eventCount",
-        "timestampStart",
-        "timestampEnd",
-        "globalActivePowerAverage",
-        "globalReactivePowerAverage",
-        "voltageAverage",
-        "globalIntensityAverage",
-        "subMetering1Average",
-        "subMetering2Average",
-        "subMetering3Average",
+        "event_count",
+        "timestamp_start",
+        "timestamp_end",
+        "global_active_power_avg",
+        "global_reactive_power_avg",
+        "voltage_avg",
+        "global_intensity_avg",
+        "submetering1_avg",
+        "submetering2_avg",
+        "submetering3_avg",
     ],
     [
         Types.INT(),
