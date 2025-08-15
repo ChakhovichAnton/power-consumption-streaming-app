@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
+import zoomPlugin from "chartjs-plugin-zoom";
 import { useEffect, useState } from "react";
 import {
   getLatestPowerConsumptionData,
@@ -36,7 +37,8 @@ ChartJS.register(
   Tooltip,
   Legend,
   TimeScale,
-  Filler
+  Filler,
+  zoomPlugin
 );
 
 const Chart = () => {
@@ -107,13 +109,26 @@ const Chart = () => {
       <Line
         data={{ datasets }}
         options={{
-          plugins: { legend: { position: "top" } },
+          plugins: {
+            legend: { position: "top" },
+            zoom: {
+              pan: {
+                enabled: !isFetching,
+                mode: "x",
+                onPanComplete({ chart }) {
+                  const xScale = chart.scales.x;
+                  const min = new Date(xScale.min);
+                  fetchData(min);
+                },
+              },
+            },
+          },
           scales: {
             x: {
               type: "time",
               ticks: {
                 autoSkip: true,
-                callback: function (value, index, ticks) {
+                callback: (value, index, ticks) => {
                   const date = new Date(value);
                   const prevDate =
                     index > 0 ? new Date(ticks[index - 1].value) : null;
