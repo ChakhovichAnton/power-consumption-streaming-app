@@ -31,13 +31,6 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     getDates(defaultDate);
   }, [defaultDate, getDates]);
 
-  const newDateSelected = (newDate?: Date) => {
-    if (newDate) {
-      setSelectedDate(newDate);
-      onSelect(newDate);
-    }
-  };
-
   return (
     <div className="flex gap-2">
       <button
@@ -55,7 +48,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         onClose={() => setDialogIsOpen(false)}
         closeDialogButton
       >
-        <div className="md:p-8">
+        <div className="md:p-4">
           <DayPicker
             animate
             fixedWeeks
@@ -64,7 +57,11 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             captionLayout="dropdown-years"
             mode="single"
             selected={selected}
-            onSelect={newDateSelected}
+            onSelect={(newDate?: Date) => {
+              if (newDate) {
+                setSelectedDate(newDate);
+              }
+            }}
             onMonthChange={getDates}
             modifiers={{ available: availableDates }}
             modifiersStyles={{
@@ -77,13 +74,27 @@ const DateSelector: React.FC<DateSelectorProps> = ({
             weekStartsOn={1}
             disabled={loading}
           />
-          <div className="flex justify-end">
+          <div className="flex flex-col mt-2 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-[#e0f7fa]"></div>
+              <p>Date with data</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-white border border-gray-300"></div>
+              <p>Date with no data</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-white border-2 border-[#0000ff]"></div>
+              <p>Selected date</p>
+            </div>
+          </div>
+          <div className="flex w-full mt-2">
             <button
               onClick={() => {
                 onSelect(selected);
                 setDialogIsOpen(false);
               }}
-              className="bg-blue-300 rounded p-1"
+              className="bg-blue-300 w-full rounded p-1"
             >
               View data
             </button>

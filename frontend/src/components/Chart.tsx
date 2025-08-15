@@ -43,7 +43,7 @@ const Chart = () => {
   const [datasets, setDatasets] = useState<ChartDataset<"line">[]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isInitialFetch, setIsInitialFetch] = useState(true);
-  const [defaultDate, setDefaultDate] = useState<Date>(new Date());
+  const [defaultDate, setDefaultDate] = useState(new Date());
   const [granularity, setGranularity] =
     useState<PowerConsumptionDataGranularity>("hour");
 
@@ -53,7 +53,7 @@ const Chart = () => {
 
       setIsFetching(true);
       const newData = await getLatestPowerConsumptionData(granularity);
-      if (newData.count > 0) {
+      if (newData && newData.count > 0) {
         if (newData.granularity === "hour") {
           const last = newData.data[newData.count - 1];
           setDefaultDate(new Date(last.timestampStart));
@@ -64,7 +64,9 @@ const Chart = () => {
       }
 
       setIsInitialFetch(false);
-      setDatasets(powerConsumptionDataToChartDataset(newData));
+      if (newData) {
+        setDatasets(powerConsumptionDataToChartDataset(newData));
+      }
       setIsFetching(false);
     };
 
@@ -77,7 +79,9 @@ const Chart = () => {
     setIsFetching(true);
     const endDate = newDateWithADayAdded(date);
     const newData = await getPowerConsumptionData(date, endDate, granularity);
-    setDatasets(powerConsumptionDataToChartDataset(newData));
+    if (newData) {
+      setDatasets(powerConsumptionDataToChartDataset(newData));
+    }
     setIsFetching(false);
   };
 
@@ -118,9 +122,6 @@ const Chart = () => {
                     type: "linear",
                     position: "left",
                     display: ({ scale }: { scale: LinearScale }) => {
-                      const datasets = scale.chart.data
-                        .datasets as ChartDataset<"line">[];
-
                       return datasets.some(
                         (d, index) =>
                           d.yAxisID === yAxis.key &&
