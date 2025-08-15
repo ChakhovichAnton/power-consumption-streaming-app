@@ -4,7 +4,7 @@ import utc from "dayjs/plugin/utc.js";
 dayjs.extend(utc);
 
 export const parseIsoTimestamp = (timestampString) => {
-  const timestamp = dayjs.utc(timestampString, dayjs.ISO_8601, true); // strict parsing
+  const timestamp = dayjs.utc(timestampString, dayjs.ISO_8601, true);
   if (timestamp.isValid()) return timestamp;
 };
 

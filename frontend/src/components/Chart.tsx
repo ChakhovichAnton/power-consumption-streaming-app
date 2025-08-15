@@ -111,7 +111,29 @@ const Chart = () => {
           scales: {
             x: {
               type: "time",
-              time: { unit: "minute" },
+              ticks: {
+                autoSkip: true,
+                callback: function (value, index, ticks) {
+                  const date = new Date(value);
+                  const prevDate =
+                    index > 0 ? new Date(ticks[index - 1].value) : null;
+
+                  const day = date.getDate();
+                  const month = date.getMonth() + 1;
+                  const hours = String(date.getHours()).padStart(2, "0");
+                  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+                  // Show full date if it is the first tick of the day
+                  if (
+                    !prevDate ||
+                    prevDate.getDate() !== day ||
+                    prevDate.getMonth() !== month - 1
+                  ) {
+                    return `${day}.${month}.${date.getFullYear()} ${hours}:${minutes}`;
+                  }
+                  return `${hours}:${minutes}`;
+                },
+              },
               title: { display: true, text: "Time" },
             },
             ...Object.assign(

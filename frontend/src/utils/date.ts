@@ -11,5 +11,9 @@ export const getMonthRange = (date: Date) => {
 export const newDateWithADayAdded = (date: Date) => {
   const newDate = new Date(date);
   newDate.setDate(date.getDate() + 1);
-  return newDate
+  return newDate;
+};
+
+export const getUtcMidnight = (date: Date) => {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000);
 };

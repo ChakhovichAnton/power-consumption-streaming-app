@@ -3,6 +3,7 @@ import type {
   PowerConsumptionDataGranularity,
   PowerConsumptionResult,
 } from "../types";
+import { getUtcMidnight } from "../utils/date";
 
 interface AvailableDatesResult {
   count: number;
@@ -14,9 +15,12 @@ export const getPowerConsumptionData = async (
   endDate: Date,
   granularity: PowerConsumptionDataGranularity
 ) => {
+  const start = getUtcMidnight(startDate).toISOString();
+  const end = getUtcMidnight(endDate).toISOString();
+
   try {
     const res = await fetch(
-      `${BACKEND_URL}/power-consumption?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}`
+      `${BACKEND_URL}/power-consumption?start=${start}&end=${end}&granularity=${granularity}`
     );
     const data = await res.json();
     return { ...data, granularity } as PowerConsumptionResult;
@@ -41,8 +45,11 @@ export const getLatestPowerConsumptionData = async (
 
 export const getAvailableDates = async (startDate: Date, endDate: Date) => {
   try {
+    const start = getUtcMidnight(startDate).toISOString();
+    const end = getUtcMidnight(endDate).toISOString();
+
     const res = await fetch(
-      `${BACKEND_URL}/power-consumption-dates?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
+      `${BACKEND_URL}/power-consumption-dates?start=${start}&end=${end}`
     );
     const { data }: AvailableDatesResult = await res.json();
     return data.map((dateString) => new Date(dateString));
