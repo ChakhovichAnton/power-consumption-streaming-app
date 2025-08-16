@@ -35,6 +35,8 @@ const usePowerConsumptionData = (
 
       setIsFetching(true);
       const newData = await getLatestPowerConsumptionData(granularity);
+
+      // Set default timestamp to open the date picker at the correct location
       if (newData && newData.count > 0) {
         if (newData.granularity === "hour") {
           const last = newData.data[newData.count - 1];
@@ -58,9 +60,9 @@ const usePowerConsumptionData = (
   }, [granularity, isFetching, isInitialFetch]);
 
   const fetchAdditionalData = async (
-    when: "before" | "after",
-    min: number,
-    max: number
+    when: "before" | "after", // Fetch data from before or after the current data
+    visibleMinX: number,
+    visibleMaxX: number
   ) => {
     if (isFetching) return;
     setIsFetching(true);
@@ -98,7 +100,7 @@ const usePowerConsumptionData = (
               : (ds.data as Point[]).concat(match.data);
 
           // Reduce the number of datapoints in the datasets state by filtering to improve performance
-          return { ...ds, data: filterFarAwayData(data, min, max) };
+          return { ...ds, data: filterFarAwayData(data, visibleMinX, visibleMaxX) };
         })
       );
     }

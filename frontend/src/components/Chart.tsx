@@ -115,7 +115,8 @@ const Chart = () => {
 
                   if (beforeMinCount < 10) {
                     fetchAdditionalData("before", min, max);
-                  } else if (afterMaxCount > 10) {
+                  }
+                  if (afterMaxCount < 10) {
                     fetchAdditionalData("after", min, max);
                   }
                 },
