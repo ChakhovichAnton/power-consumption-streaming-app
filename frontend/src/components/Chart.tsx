@@ -9,24 +9,22 @@ import {
   Legend,
   TimeScale,
   Filler,
-  type ChartDataset,
+  type Point,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import zoomPlugin from "chartjs-plugin-zoom";
-import { useEffect, useState } from "react";
-import {
-  getLatestPowerConsumptionData,
-  getPowerConsumptionData,
-} from "../services/powerConsumptionService";
+import { useState } from "react";
 import Selector from "./Selector";
 import type { PowerConsumptionDataGranularity } from "../types";
 import DateSelector from "./DateSelector";
 import {
+  datasetsMaxX,
+  datasetsMinX,
   POWER_CONSUMPTION_CHART_ATTRIBUTES,
-  powerConsumptionDataToChartDataset,
 } from "../utils/chart";
-import { newDateWithADayAdded } from "../utils/date";
+import { minFilter, takeRightWhileCount, takeWhileCount } from "../utils/array";
+import usePowerConsumptionData from "../hooks/usePowerConsumptionData";
 
 ChartJS.register(
   CategoryScale,
@@ -42,52 +40,25 @@ ChartJS.register(
 );
 
 const Chart = () => {
-  const [datasets, setDatasets] = useState<ChartDataset<"line">[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
-  const [isInitialFetch, setIsInitialFetch] = useState(true);
-  const [defaultDate, setDefaultDate] = useState(new Date());
   const [granularity, setGranularity] =
     useState<PowerConsumptionDataGranularity>("hour");
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      if (isFetching || !isInitialFetch) return;
-
-      setIsFetching(true);
-      const newData = await getLatestPowerConsumptionData(granularity);
-      if (newData && newData.count > 0) {
-        if (newData.granularity === "hour") {
-          const last = newData.data[newData.count - 1];
-          setDefaultDate(new Date(last.timestampStart));
-        } else {
-          const last = newData.data[newData.count - 1];
-          setDefaultDate(new Date(last.timestamp));
-        }
-      }
-
-      setIsInitialFetch(false);
-      if (newData) {
-        setDatasets(powerConsumptionDataToChartDataset(newData));
-      }
-      setIsFetching(false);
-    };
-
-    fetchInitialData();
-  }, [granularity, isFetching, isInitialFetch]);
-
-  const fetchData = async (date: Date) => {
-    if (isFetching) return;
-
-    setIsFetching(true);
-    const endDate = newDateWithADayAdded(date);
-    const newData = await getPowerConsumptionData(date, endDate, granularity);
-    if (newData) {
-      setDatasets(powerConsumptionDataToChartDataset(newData));
-    }
-    setIsFetching(false);
-  };
+  const {
+    datasets,
+    visibleDatasets,
+    isInitialFetch,
+    defaultDate,
+    isFetching,
+    fetchAdditionalData,
+    fetchData,
+    setVisibleDatasets,
+  } = usePowerConsumptionData(granularity);
 
   if (isInitialFetch) return <p>Loading...</p>;
+
+  const allDataIsVisible =
+    datasets.length === 0 ||
+    datasets[0].data.length === visibleDatasets[0].data.length;
 
   return (
     <>
@@ -107,7 +78,7 @@ const Chart = () => {
       </div>
       <DateSelector onSelect={fetchData} defaultDate={defaultDate} />
       <Line
-        data={{ datasets }}
+        data={{ datasets: visibleDatasets }}
         options={{
           plugins: {
             legend: { position: "top" },
@@ -115,10 +86,49 @@ const Chart = () => {
               pan: {
                 enabled: !isFetching,
                 mode: "x",
+                onPan({ chart }) {
+                  if (datasets.length < 1 || visibleDatasets.length < 1) return;
+                  const { min } = chart.scales.x;
+                  const visibleCount = visibleDatasets[0].data.length;
+
+                  setVisibleDatasets(
+                    datasets.map((ds) => {
+                      return {
+                        ...ds,
+                        data: minFilter(ds.data as Point[], min, visibleCount),
+                      };
+                    })
+                  );
+                },
                 onPanComplete({ chart }) {
-                  const xScale = chart.scales.x;
-                  const min = new Date(xScale.min);
-                  fetchData(min);
+                  if (datasets.length < 1) return;
+                  const { min, max } = chart.scales.x;
+
+                  const beforeMinCount = takeWhileCount(
+                    datasets[0].data,
+                    (value) => (value as Point).x < min
+                  );
+                  const afterMaxCount = takeRightWhileCount(
+                    datasets[0].data,
+                    (value) => (value as Point).x > max
+                  );
+
+                  if (beforeMinCount < 10) {
+                    fetchAdditionalData("before", min, max);
+                  } else if (afterMaxCount > 10) {
+                    fetchAdditionalData("after", min, max);
+                  }
+                },
+              },
+              zoom: {
+                wheel: { enabled: !isFetching },
+                pinch: { enabled: !isFetching },
+                mode: "x",
+              },
+              limits: {
+                x: {
+                  min: allDataIsVisible ? undefined : datasetsMinX(datasets),
+                  max: allDataIsVisible ? undefined : datasetsMaxX(datasets),
                 },
               },
             },

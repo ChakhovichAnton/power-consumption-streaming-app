@@ -1,3 +1,4 @@
+import type { ChartDataset, Point } from "chart.js";
 import type { PowerConsumptionResult } from "../types";
 
 type DataLabel =
@@ -26,6 +27,8 @@ interface PowerConsumptionChartAttribute {
     text: string;
   };
 }
+
+export const MAX_VISIBLE_DATAPOINT_COUNT = 300;
 
 export const POWER_CONSUMPTION_CHART_ATTRIBUTES: PowerConsumptionChartAttribute[] =
   [
@@ -116,4 +119,54 @@ export const powerConsumptionDataToChartDataset = ({
       yAxisID: val.yAxis.key,
     };
   });
+};
+
+/**
+ * Offset to leave pannable data onto both sides. Subtract 2 from
+ * MAX_VISIBLE_DATAPOINT_COUNT to make it pannable on both sides
+ * if there are exactly MAX_VISIBLE_DATAPOINT_COUNT many datapoints */
+const getDatasetOffset = (dataset: ChartDataset<"line">) => {
+  return (dataset.data.length - (MAX_VISIBLE_DATAPOINT_COUNT - 2)) / 2;
+};
+
+export const datasetToVisibleDataset = (dataset: ChartDataset<"line">) => {
+  if (dataset.data.length <= MAX_VISIBLE_DATAPOINT_COUNT) {
+    return dataset; // Show all of the data
+  }
+
+  const offset = getDatasetOffset(dataset);
+  const data = dataset.data.slice(offset, MAX_VISIBLE_DATAPOINT_COUNT + offset);
+  return { ...dataset, data };
+};
+
+export const datasetsMinX = (datasets: ChartDataset<"line">[]) => {
+  return datasets
+    .filter((d) => d.data.length > 0)
+    .map((d) => (d.data[0] as Point).x)
+    .reduce((prev, cur) => (prev < cur ? prev : cur));
+};
+
+export const datasetsMaxX = (datasets: ChartDataset<"line">[]) => {
+  return datasets
+    .filter((d) => d.data.length > 0)
+    .map((d) => (d.data[d.data.length - 1] as Point).x)
+    .reduce((prev, cur) => (prev > cur ? prev : cur));
+};
+
+/**
+ * Filters data which is MAX_VISIBLE_DATAPOINT_COUNT datapoints away from
+ * the visible visibleMinX or the visibleMaxX
+ */
+export const filterFarAwayData = (
+  data: Point[],
+  visibleMinX: number,
+  visibleMaxX: number
+) => {
+  const minIndex = data.findIndex(({ x }) => x >= visibleMinX);
+  const maxIndex = data.findIndex(({ x }) => x > visibleMaxX);
+  return data.filter(
+    (_, index) =>
+      index >= minIndex - MAX_VISIBLE_DATAPOINT_COUNT &&
+      index <= maxIndex + MAX_VISIBLE_DATAPOINT_COUNT
+  );
 };
