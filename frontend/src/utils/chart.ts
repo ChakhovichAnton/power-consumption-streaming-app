@@ -1,5 +1,5 @@
 import type { ChartDataset, Point } from "chart.js";
-import type { PowerConsumptionResult } from "../types";
+import type { PowerConsumptionData, PowerConsumptionResult } from "../types";
 
 type DataLabel =
   | "globalActivePower"
@@ -119,6 +119,16 @@ export const powerConsumptionDataToChartDataset = ({
       yAxisID: val.yAxis.key,
     };
   });
+};
+
+export const powerConsumptionDataToChartData = (
+  data: PowerConsumptionData,
+  attributeIndex: number
+) => {
+  return {
+    x: new Date(data.timestamp).getTime(),
+    y: data[POWER_CONSUMPTION_CHART_ATTRIBUTES[attributeIndex].dataLabel],
+  };
 };
 
 /**

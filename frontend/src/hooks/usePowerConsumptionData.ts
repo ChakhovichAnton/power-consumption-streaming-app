@@ -8,10 +8,13 @@ import {
   datasetsMinX,
   datasetToVisibleDataset,
   filterFarAwayData,
+  MAX_VISIBLE_DATAPOINT_COUNT,
+  powerConsumptionDataToChartData,
   powerConsumptionDataToChartDataset,
 } from "../utils/chart";
 import { newDateWithADayAdded } from "../utils/date";
 import type {
+  PowerConsumptionData,
   PowerConsumptionDataGranularity,
   PowerConsumptionResult,
 } from "../types";
@@ -25,15 +28,15 @@ const usePowerConsumptionData = (
     ChartDataset<"line">[]
   >([]);
 
-  const [isFetching, setIsFetching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isInitialFetch, setIsInitialFetch] = useState(true);
   const [defaultDate, setDefaultDate] = useState(new Date());
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (isFetching || !isInitialFetch) return;
+      if (isLoading || !isInitialFetch) return;
 
-      setIsFetching(true);
+      setIsLoading(true);
       const newData = await getLatestPowerConsumptionData(granularity);
 
       // Set default timestamp to open the date picker at the correct location
@@ -53,19 +56,19 @@ const usePowerConsumptionData = (
         setDatasets(newDatasets);
         setVisibleDatasets(newDatasets.map(datasetToVisibleDataset));
       }
-      setIsFetching(false);
+      setIsLoading(false);
     };
 
     fetchInitialData();
-  }, [granularity, isFetching, isInitialFetch]);
+  }, [granularity, isLoading, isInitialFetch]);
 
   const fetchAdditionalData = async (
     when: "before" | "after", // Fetch data from before or after the current data
     visibleMinX: number,
     visibleMaxX: number
   ) => {
-    if (isFetching) return;
-    setIsFetching(true);
+    if (isLoading) return;
+    setIsLoading(true);
 
     // Fetch new data
     let newData: PowerConsumptionResult | undefined;
@@ -100,18 +103,21 @@ const usePowerConsumptionData = (
               : (ds.data as Point[]).concat(match.data);
 
           // Reduce the number of datapoints in the datasets state by filtering to improve performance
-          return { ...ds, data: filterFarAwayData(data, visibleMinX, visibleMaxX) };
+          return {
+            ...ds,
+            data: filterFarAwayData(data, visibleMinX, visibleMaxX),
+          };
         })
       );
     }
 
-    setIsFetching(false);
+    setIsLoading(false);
   };
 
   const fetchData = async (date: Date) => {
-    if (isFetching) return;
+    if (isLoading) return;
 
-    setIsFetching(true);
+    setIsLoading(true);
     const endDate = newDateWithADayAdded(date);
     const newData = await getPowerConsumptionData(date, endDate, granularity);
     if (newData) {
@@ -119,18 +125,60 @@ const usePowerConsumptionData = (
       setDatasets(newDatasets);
       setVisibleDatasets(newDatasets.map(datasetToVisibleDataset));
     }
-    setIsFetching(false);
+    setIsLoading(false);
+  };
+
+  const fetchLatestData = async (gran: PowerConsumptionDataGranularity) => {
+    setIsLoading(true);
+
+    const newData = await getLatestPowerConsumptionData(gran);
+    if (newData) {
+      const newDatasets = powerConsumptionDataToChartDataset(newData);
+      setDatasets(newDatasets);
+      setVisibleDatasets(
+        newDatasets.map((ds) => {
+          return { ...ds, data: ds.data.slice(-MAX_VISIBLE_DATAPOINT_COUNT) };
+        })
+      );
+    }
+
+    setIsLoading(false);
+  };
+
+  const addLatestDatapoint = async (data: PowerConsumptionData) => {
+    setDatasets((prev) =>
+      prev.map((ds, index) => {
+        // Remove first value if there are many stored to improve performance
+        if (ds.data.length > 2 * MAX_VISIBLE_DATAPOINT_COUNT) {
+          ds.data.shift();
+        }
+        ds.data.push(powerConsumptionDataToChartData(data, index));
+        return { ...ds };
+      })
+    );
+
+    setVisibleDatasets((prev) =>
+      prev.map((ds, index) => {
+        if (ds.data.length >= MAX_VISIBLE_DATAPOINT_COUNT) {
+          ds.data.shift();
+        }
+        ds.data.push(powerConsumptionDataToChartData(data, index));
+        return { ...ds };
+      })
+    );
   };
 
   return {
-    isFetching,
+    isLoading,
     visibleDatasets,
     datasets,
     defaultDate,
     isInitialFetch,
     fetchData,
+    fetchLatestData,
     fetchAdditionalData,
     setVisibleDatasets,
+    addLatestDatapoint,
   };
 };
 

@@ -5,6 +5,7 @@ config({ path: "../.env" });
 export const RAW_DATA_TOPIC = "raw_power_consumption_data";
 export const TRANSFORMED_DATA_TOPIC = "transformed_power_consumption_data";
 export const HOST = "localhost"; // Running on localhost for testing
+export const FRONTEND_ORIGIN_CORS = "*"; // Used for Socket.io cors policy
 
 export const POSTGRES_HOST = "localhost";
 export const POSTGRES_PORT = 5432;

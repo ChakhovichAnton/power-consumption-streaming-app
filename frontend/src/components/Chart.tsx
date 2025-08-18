@@ -21,10 +21,13 @@ import DateSelector from "./DateSelector";
 import {
   datasetsMaxX,
   datasetsMinX,
+  MAX_VISIBLE_DATAPOINT_COUNT,
   POWER_CONSUMPTION_CHART_ATTRIBUTES,
 } from "../utils/chart";
 import { minFilter, takeRightWhileCount, takeWhileCount } from "../utils/array";
 import usePowerConsumptionData from "../hooks/usePowerConsumptionData";
+import LiveButton from "./LiveButton";
+import useSocketIOForPowerConsumptionData from "../hooks/useSocketIOForPowerConsumptionData";
 
 ChartJS.register(
   CategoryScale,
@@ -40,6 +43,7 @@ ChartJS.register(
 );
 
 const Chart = () => {
+  const [isLive, setIsLive] = useState(false);
   const [granularity, setGranularity] =
     useState<PowerConsumptionDataGranularity>("hour");
 
@@ -48,16 +52,40 @@ const Chart = () => {
     visibleDatasets,
     isInitialFetch,
     defaultDate,
-    isFetching,
+    isLoading,
     fetchAdditionalData,
     fetchData,
+    fetchLatestData,
     setVisibleDatasets,
+    addLatestDatapoint,
   } = usePowerConsumptionData(granularity);
+
+  const { subscribe, unsubscribe } = useSocketIOForPowerConsumptionData(
+    async (data) => {
+      if (isLive) {
+        await addLatestDatapoint(data);
+      }
+    }
+  );
+
+  const onLiveButtonClick = () => {
+    const newIsLive = !isLive;
+    setIsLive((prev) => !prev);
+
+    if (newIsLive) {
+      setGranularity("minute");
+      fetchLatestData("minute");
+      subscribe();
+    } else {
+      unsubscribe();
+    }
+  };
 
   if (isInitialFetch) return <p>Loading...</p>;
 
   const allDataIsVisible =
     datasets.length === 0 ||
+    datasets[0].data.length === 0 ||
     datasets[0].data.length === visibleDatasets[0].data.length;
 
   return (
@@ -76,7 +104,14 @@ const Chart = () => {
           ]}
         />
       </div>
-      <DateSelector onSelect={fetchData} defaultDate={defaultDate} />
+      <div className="flex gap-2">
+        <DateSelector onSelect={fetchData} defaultDate={defaultDate} />
+        <LiveButton
+          isLive={isLive}
+          onClick={onLiveButtonClick}
+          disabled={isLoading}
+        />
+      </div>
       <Line
         data={{ datasets: visibleDatasets }}
         options={{
@@ -84,19 +119,25 @@ const Chart = () => {
             legend: { position: "top" },
             zoom: {
               pan: {
-                enabled: !isFetching,
+                enabled: !isLoading,
                 mode: "x",
                 onPan({ chart }) {
                   if (datasets.length < 1 || visibleDatasets.length < 1) return;
                   const { min } = chart.scales.x;
-                  const visibleCount = visibleDatasets[0].data.length;
+
+                  if (isLive) {
+                    setIsLive(false);
+                    unsubscribe();
+                  }
 
                   setVisibleDatasets(
                     datasets.map((ds) => {
-                      return {
-                        ...ds,
-                        data: minFilter(ds.data as Point[], min, visibleCount),
-                      };
+                      const data = minFilter(
+                        ds.data as Point[],
+                        min,
+                        MAX_VISIBLE_DATAPOINT_COUNT
+                      );
+                      return { ...ds, data };
                     })
                   );
                 },
@@ -122,8 +163,8 @@ const Chart = () => {
                 },
               },
               zoom: {
-                wheel: { enabled: !isFetching },
-                pinch: { enabled: !isFetching },
+                wheel: { enabled: !isLoading },
+                pinch: { enabled: !isLoading },
                 mode: "x",
               },
               limits: {
