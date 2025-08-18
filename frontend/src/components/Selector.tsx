@@ -16,7 +16,7 @@ const Selector: React.FC<SelectorProps> = ({
       id={id}
       value={selected}
       onChange={(e) => onSelect(e.target.value)}
-      className="border rounded min-w-20"
+      className="bg-gray-600 hover:bg-gray-700 rounded py-1.5 px-2 text-white font-medium focus:outline-none focus:ring-2 focus:ring-gray-400"
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>

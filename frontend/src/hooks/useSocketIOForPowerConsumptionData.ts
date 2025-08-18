@@ -3,11 +3,14 @@ import type { PowerConsumptionData } from "../types";
 import { EVENT_NAMES, ROOMS, socket } from "../socket";
 
 const useSocketIOForPowerConsumptionData = (
+  isLive: boolean,
   addLatestDatapoint: (data: PowerConsumptionData) => Promise<void>
 ) => {
   useEffect(() => {
     const onMessage = (message: string) => {
-      addLatestDatapoint(JSON.parse(message) as PowerConsumptionData);
+      if (isLive) {
+        addLatestDatapoint(JSON.parse(message) as PowerConsumptionData);
+      }
     };
 
     socket.on(EVENT_NAMES.newMinuteData, onMessage);
@@ -15,7 +18,7 @@ const useSocketIOForPowerConsumptionData = (
     return () => {
       socket.off(EVENT_NAMES.newMinuteData, onMessage);
     };
-  }, [addLatestDatapoint]);
+  }, [addLatestDatapoint, isLive]);
 
   const subscribe = () => {
     socket.emit(

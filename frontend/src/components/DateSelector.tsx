@@ -4,13 +4,16 @@ import "react-day-picker/style.css";
 import Dialog from "./Dialog.tsx";
 import { getAvailableDates } from "../services/powerConsumptionService.ts";
 import { getMonthRange } from "../utils/date.ts";
+import type { PowerConsumptionDataGranularity } from "../types/index.ts";
 
 interface DateSelectorProps {
+  granularity: PowerConsumptionDataGranularity;
   defaultDate: Date;
   onSelect: (date: Date) => void;
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({
+  granularity,
   defaultDate,
   onSelect,
 }) => {
@@ -22,10 +25,10 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   const getDates = useCallback(async (date: Date) => {
     setLoading(true);
     const [start, end] = getMonthRange(date);
-    const newDates = await getAvailableDates(start, end);
+    const newDates = await getAvailableDates(start, end, granularity);
     setAvailableDates(newDates);
     setLoading(false);
-  }, []);
+  }, [granularity]);
 
   useEffect(() => {
     getDates(defaultDate);
@@ -34,7 +37,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   return (
     <div className="flex gap-2">
       <button
-        className="bg-blue-300 rounded p-1"
+        className="bg-gray-600 hover:bg-gray-700 rounded p-1 px-3 py-1.5 text-white font-medium"
         onClick={(event) => {
           event.stopPropagation();
           setDialogIsOpen(true);
@@ -94,7 +97,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
                 onSelect(selected);
                 setDialogIsOpen(false);
               }}
-              className="bg-blue-300 w-full rounded p-1"
+              className="bg-gray-600 hover:bg-gray-700 rounded w-full py-1.5 text-white font-medium"
             >
               View data
             </button>

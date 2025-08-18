@@ -28,6 +28,7 @@ import { minFilter, takeRightWhileCount, takeWhileCount } from "../utils/array";
 import usePowerConsumptionData from "../hooks/usePowerConsumptionData";
 import LiveButton from "./LiveButton";
 import useSocketIOForPowerConsumptionData from "../hooks/useSocketIOForPowerConsumptionData";
+import Loading from "./Loading";
 
 ChartJS.register(
   CategoryScale,
@@ -61,11 +62,8 @@ const Chart = () => {
   } = usePowerConsumptionData(granularity);
 
   const { subscribe, unsubscribe } = useSocketIOForPowerConsumptionData(
-    async (data) => {
-      if (isLive) {
-        await addLatestDatapoint(data);
-      }
-    }
+    isLive,
+    addLatestDatapoint
   );
 
   const onLiveButtonClick = () => {
@@ -81,7 +79,7 @@ const Chart = () => {
     }
   };
 
-  if (isInitialFetch) return <p>Loading...</p>;
+  if (isInitialFetch) return <Loading />;
 
   const allDataIsVisible =
     datasets.length === 0 ||
@@ -90,27 +88,33 @@ const Chart = () => {
 
   return (
     <>
-      <div className="flex gap-2 mb-1">
-        <label htmlFor="granularity-selector">Data granularity:</label>
-        <Selector
-          id="granularity-selector"
-          onSelect={(option: string) => {
-            setGranularity(option as PowerConsumptionDataGranularity);
-          }}
-          selected={granularity}
-          options={[
-            { value: "hour", description: "Hourly" },
-            { value: "minute", description: "Minute" },
-          ]}
-        />
-      </div>
-      <div className="flex gap-2">
-        <DateSelector onSelect={fetchData} defaultDate={defaultDate} />
-        <LiveButton
-          isLive={isLive}
-          onClick={onLiveButtonClick}
-          disabled={isLoading}
-        />
+      <div className="flex flex-col gap-y-1 sm:flex-row justify-between mb-1">
+        <div className="flex items-center gap-1">
+          <label htmlFor="granularity-selector" className="font-medium text-gray-700">Data granularity:</label>
+          <Selector
+            id="granularity-selector"
+            onSelect={(option: string) => {
+              setGranularity(option as PowerConsumptionDataGranularity);
+            }}
+            selected={granularity}
+            options={[
+              { value: "hour", description: "Hourly" },
+              { value: "minute", description: "Minute" },
+            ]}
+          />
+        </div>
+        <div className="flex gap-2">
+          <DateSelector
+            granularity={granularity}
+            onSelect={fetchData}
+            defaultDate={defaultDate}
+          />
+          <LiveButton
+            isLive={isLive}
+            onClick={onLiveButtonClick}
+            disabled={isLoading}
+          />
+        </div>
       </div>
       <Line
         data={{ datasets: visibleDatasets }}
@@ -179,6 +183,8 @@ const Chart = () => {
             x: {
               type: "time",
               ticks: {
+                // Show the date and the time on the first tick and whenever the date changes.
+                // Otherwise show only the time to reduce the amount of labeling text
                 autoSkip: true,
                 callback: (value, index, ticks) => {
                   const date = new Date(value);
@@ -203,6 +209,7 @@ const Chart = () => {
               },
               title: { display: true, text: "Time" },
             },
+            // Display multiple y-axis for different datasets as they have different units
             ...Object.assign(
               {},
               ...POWER_CONSUMPTION_CHART_ATTRIBUTES.map(({ yAxis }) => {
@@ -211,6 +218,7 @@ const Chart = () => {
                     type: "linear",
                     position: "left",
                     display: ({ scale }: { scale: LinearScale }) => {
+                      // Display axis only if the related data is available
                       return datasets.some(
                         (d, index) =>
                           d.yAxisID === yAxis.key &&

@@ -43,13 +43,17 @@ export const getLatestPowerConsumptionData = async (
   }
 };
 
-export const getAvailableDates = async (startDate: Date, endDate: Date) => {
+export const getAvailableDates = async (
+  startDate: Date,
+  endDate: Date,
+  granularity: PowerConsumptionDataGranularity
+) => {
   try {
     const start = getUtcMidnight(startDate).toISOString();
     const end = getUtcMidnight(endDate).toISOString();
 
     const res = await fetch(
-      `${BACKEND_URL}/power-consumption-dates?start=${start}&end=${end}`
+      `${BACKEND_URL}/power-consumption-dates?start=${start}&end=${end}&granularity=${granularity}`
     );
     const { data }: AvailableDatesResult = await res.json();
     return data.map((dateString) => new Date(dateString));
