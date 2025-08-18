@@ -9,6 +9,7 @@ import {
 } from "./controllers/powerConsumption.js";
 import { socketHandler } from "./sockets/powerConsumption.js";
 import { FRONTEND_ORIGIN_CORS } from "../constants.js";
+import { startKafkaSocketConsumer } from "./SocketConsumer.js";
 
 const PORT = 3000;
 
@@ -29,6 +30,9 @@ app.get("/power-consumption", getPowerConsumption);
 
 // Sockets
 io.on("connection", (socket) => socketHandler(io, socket));
+
+// Kafka consumers
+startKafkaSocketConsumer(io);
 
 server.listen(PORT, () =>
   console.log(`Power consumption API listening on port ${PORT}`)
