@@ -1,6 +1,6 @@
 import avro from "avsc";
 
-export const rawDataAvroType = avro.Type.forSchema({
+export const rawPowerConsumptionDataAvroType = avro.Type.forSchema({
   name: "PowerConsumptionData",
   type: "record",
   fields: [

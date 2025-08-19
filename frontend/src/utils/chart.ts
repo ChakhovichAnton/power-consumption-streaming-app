@@ -3,6 +3,7 @@ import type { PowerConsumptionData, PowerConsumptionResult } from "../types";
 
 type DataLabel =
   | "globalActivePower"
+  | "globalReactivePower"
   | "globalIntensity"
   | "voltage"
   | "submetering1"
@@ -11,6 +12,7 @@ type DataLabel =
 
 type HourlyDataLabel =
   | "globalActivePowerAvg"
+  | "globalReactivePowerAvg"
   | "globalIntensityAvg"
   | "voltageAvg"
   | "submetering1Avg"
@@ -40,6 +42,16 @@ export const POWER_CONSUMPTION_CHART_ATTRIBUTES: PowerConsumptionChartAttribute[
       yAxis: {
         key: "yGlobalActivePower",
         text: "Global Active Power (kW)",
+      },
+    },
+    {
+      dataLabel: "globalReactivePower",
+      hourlyDataLabel: "globalReactivePowerAvg",
+      label: "Global Reactive Power",
+      borderColor: "gray",
+      yAxis: {
+        key: "yGlobalReactivePower",
+        text: "Global Reactive Power (kW)",
       },
     },
     {
@@ -121,16 +133,6 @@ export const powerConsumptionDataToChartDataset = ({
   });
 };
 
-export const powerConsumptionDataToChartData = (
-  data: PowerConsumptionData,
-  attributeIndex: number
-) => {
-  return {
-    x: new Date(data.timestamp).getTime(),
-    y: data[POWER_CONSUMPTION_CHART_ATTRIBUTES[attributeIndex].dataLabel],
-  };
-};
-
 /**
  * Offset to leave pannable data onto both sides. Subtract 2 from
  * MAX_VISIBLE_DATAPOINT_COUNT to make it pannable on both sides
@@ -179,4 +181,22 @@ export const filterFarAwayData = (
       index >= minIndex - MAX_VISIBLE_DATAPOINT_COUNT &&
       index <= maxIndex + MAX_VISIBLE_DATAPOINT_COUNT
   );
+};
+
+export const addDatapointToDataset = (
+  datasets: ChartDataset<"line">[],
+  shiftingCondition: (length: number) => boolean,
+  data: PowerConsumptionData
+) => {
+  return datasets.map((ds, index) => {
+    // Remove first element if there are many stored to improve performance
+    if (shiftingCondition(ds.data.length)) ds.data.shift();
+
+    // Add new datapoint to dataset
+    const x = new Date(data.timestamp).getTime();
+    const y = data[POWER_CONSUMPTION_CHART_ATTRIBUTES[index].dataLabel];
+    ds.data.push({ x, y });
+
+    return ds;
+  });
 };

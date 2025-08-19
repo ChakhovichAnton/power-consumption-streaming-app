@@ -1,5 +1,15 @@
 import { postgrePool } from "../../lib/postgres.js";
 
+export const getDatesWithHourlyData = async (startISOString, endISOString) => {
+  const query = `
+  SELECT DISTINCT DATE(timestamp_start) AS date_with_data
+  FROM hourly_power_consumption_data
+  WHERE timestamp_start >= $1 AND timestamp_end < $2
+  ORDER BY date_with_data;`;
+
+  return await postgrePool.query(query, [startISOString, endISOString]);
+};
+
 export const getHourlyConsumption = async (startISOString, endISOString, limit, offset) => {
   const query = `
   SELECT *

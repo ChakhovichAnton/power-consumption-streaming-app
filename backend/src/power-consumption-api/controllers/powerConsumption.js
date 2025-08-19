@@ -8,6 +8,7 @@ import {
   getLatestConsumption,
 } from "./../services/powerConsumption.js";
 import {
+  getDatesWithHourlyData,
   getHourlyConsumption,
   getLatestHourlyConsumption,
 } from "./../services/hourlyPowerConsumption.js";
@@ -50,7 +51,7 @@ export const getPowerConsumption = async (req, res) => {
 };
 
 export const getDatesWithPowerConsumptionData = async (req, res) => {
-  const { start, end } = req.query;
+  const { start, end, granularity = "hour" } = req.query;
 
   const {
     start: startTimestamp,
@@ -61,14 +62,20 @@ export const getDatesWithPowerConsumptionData = async (req, res) => {
     return res.status(400).json(error);
   }
 
-  const result = await getDatesWithData(
+  const granularityIsValid = validateGranularity(granularity);
+  if (granularityIsValid !== true) {
+    return res.status(400).json(granularityIsValid);
+  }
+
+  const consumptionFunction =
+    granularity === "hour" ? getDatesWithHourlyData : getDatesWithData;
+
+  const result = await consumptionFunction(
     startTimestamp.toISOString(),
     endTimestamp.toISOString()
   );
-  res.send({
-    count: result.rows.length,
-    data: result.rows.map((row) => row.date_with_data),
-  });
+  const data = result.rows.map((row) => row.date_with_data);
+  res.send({ count: data.length, data });
 };
 
 export const getLatestPowerConsumptionData = async (req, res) => {

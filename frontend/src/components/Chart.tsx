@@ -24,7 +24,7 @@ import {
   MAX_VISIBLE_DATAPOINT_COUNT,
   POWER_CONSUMPTION_CHART_ATTRIBUTES,
 } from "../utils/chart";
-import { minFilter, takeRightWhileCount, takeWhileCount } from "../utils/array";
+import { takeRightWhileCount, takeWhileCount } from "../utils/array";
 import usePowerConsumptionData from "../hooks/usePowerConsumptionData";
 import LiveButton from "./LiveButton";
 import useSocketIOForPowerConsumptionData from "../hooks/useSocketIOForPowerConsumptionData";
@@ -57,7 +57,7 @@ const Chart = () => {
     fetchAdditionalData,
     fetchData,
     fetchLatestData,
-    setVisibleDatasets,
+    setVisibleDatasetsFromMinX,
     addLatestDatapoint,
   } = usePowerConsumptionData(granularity);
 
@@ -72,11 +72,20 @@ const Chart = () => {
 
     if (newIsLive) {
       setGranularity("minute");
-      fetchLatestData("minute");
-      subscribe();
+      fetchLatestData((ds) => {
+        // Save at most the latest MAX_VISIBLE_DATAPOINT_COUNT number of datapoints
+        return { ...ds, data: ds.data.slice(-MAX_VISIBLE_DATAPOINT_COUNT) };
+      }, "minute");
+
+      subscribe(); // Subscribe to new events
     } else {
       unsubscribe();
     }
+  };
+
+  const stopLive = () => {
+    setIsLive(false);
+    unsubscribe();
   };
 
   if (isInitialFetch) return <Loading />;
@@ -90,7 +99,12 @@ const Chart = () => {
     <>
       <div className="flex flex-col gap-y-1 sm:flex-row justify-between mb-1">
         <div className="flex items-center gap-1">
-          <label htmlFor="granularity-selector" className="font-medium text-gray-700">Data granularity:</label>
+          <label
+            htmlFor="granularity-selector"
+            className="font-medium text-gray-700"
+          >
+            Data granularity:
+          </label>
           <Selector
             id="granularity-selector"
             onSelect={(option: string) => {
@@ -106,7 +120,10 @@ const Chart = () => {
         <div className="flex gap-2">
           <DateSelector
             granularity={granularity}
-            onSelect={fetchData}
+            onSelect={(date: Date) => {
+              if (isLive) stopLive();
+              fetchData(date);
+            }}
             defaultDate={defaultDate}
           />
           <LiveButton
@@ -129,23 +146,14 @@ const Chart = () => {
                   if (datasets.length < 1 || visibleDatasets.length < 1) return;
                   const { min } = chart.scales.x;
 
-                  if (isLive) {
-                    setIsLive(false);
-                    unsubscribe();
-                  }
+                  // Panning causes the live mode to be disabled
+                  if (isLive) stopLive();
 
-                  setVisibleDatasets(
-                    datasets.map((ds) => {
-                      const data = minFilter(
-                        ds.data as Point[],
-                        min,
-                        MAX_VISIBLE_DATAPOINT_COUNT
-                      );
-                      return { ...ds, data };
-                    })
-                  );
+                  // Whenever the user pans, change the displayed datapoints
+                  setVisibleDatasetsFromMinX(min);
                 },
                 onPanComplete({ chart }) {
+                  // Fetch new data from the right or the left if the displays data close to the edge
                   if (datasets.length < 1) return;
                   const { min, max } = chart.scales.x;
 
@@ -167,6 +175,10 @@ const Chart = () => {
                 },
               },
               zoom: {
+                onZoom: () => {
+                  // Zooming causes the live mode to be disabled
+                  if (isLive) stopLive();
+                },
                 wheel: { enabled: !isLoading },
                 pinch: { enabled: !isLoading },
                 mode: "x",

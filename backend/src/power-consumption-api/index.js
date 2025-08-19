@@ -29,7 +29,7 @@ app.get("/power-consumption-latest", getLatestPowerConsumptionData);
 app.get("/power-consumption", getPowerConsumption);
 
 // Sockets
-io.on("connection", (socket) => socketHandler(io, socket));
+io.on("connection", (socket) => socketHandler(socket));
 
 // Kafka consumers
 startKafkaSocketConsumer(io);

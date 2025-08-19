@@ -2,8 +2,8 @@ import { createReadStream } from "fs";
 import { createInterface } from "readline";
 import { RAW_DATA_TOPIC } from "../constants.js";
 import { producer } from "../lib/kafka.js";
-import { rawDataAvroType } from "../lib/avro.js";
-import { timeAndDateStringToTimestamp } from "../lib/time.js";
+import { rawPowerConsumptionDataAvroType } from "../lib/avro.js";
+import { timeAndDateStringToTimestamp, wait } from "../lib/time.js";
 
 const toNumberOrNull = (string) => {
   return string.trim() === "" || isNaN(Number(string)) ? null : Number(string);
@@ -11,13 +11,14 @@ const toNumberOrNull = (string) => {
 
 const datapointsToAvro = (datapoints) => {
   return datapoints.map((datapoint) => {
-    return { value: rawDataAvroType.toBuffer(datapoint) };
+    return { value: rawPowerConsumptionDataAvroType.toBuffer(datapoint) };
   });
 };
 
 const DATA_FILE_PATH = "../data/household_power_consumption.txt";
-const LOG_EVERY_X_LINES_PROCESSED = 100_000;
-const PRODUCE_DATA_BATCH_SIZE = 10_000;
+const LOG_EVERY_X_LINES_PROCESSED = 100;
+const PRODUCE_DATA_BATCH_SIZE = 5;
+const WAIT_TIME_BETWEEN_BATCHES_MS = 2000;
 
 const main = async () => {
   console.log("Running data-producer");
@@ -59,6 +60,10 @@ const main = async () => {
         const messages = datapointsToAvro(datapoints);
         await producer.send({ topic: RAW_DATA_TOPIC, messages });
         datapoints = [];
+
+        if (WAIT_TIME_BETWEEN_BATCHES_MS > 0) {
+          await wait(WAIT_TIME_BETWEEN_BATCHES_MS);
+        }
       }
 
       // Log progress

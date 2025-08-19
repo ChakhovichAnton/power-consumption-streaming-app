@@ -4,64 +4,76 @@ import {
   getPowerConsumptionData,
 } from "../services/powerConsumptionService";
 import {
+  addDatapointToDataset,
   datasetsMaxX,
   datasetsMinX,
   datasetToVisibleDataset,
   filterFarAwayData,
   MAX_VISIBLE_DATAPOINT_COUNT,
-  powerConsumptionDataToChartData,
   powerConsumptionDataToChartDataset,
 } from "../utils/chart";
-import { newDateWithADayAdded } from "../utils/date";
+import {
+  getDefaultDateForSelectorFromDataset,
+  newDateWithADayAdded,
+} from "../utils/date";
 import type {
   PowerConsumptionData,
   PowerConsumptionDataGranularity,
   PowerConsumptionResult,
 } from "../types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { minFilter } from "../utils/array";
+
+type LineDataset = ChartDataset<"line">;
 
 const usePowerConsumptionData = (
   granularity: PowerConsumptionDataGranularity
 ) => {
-  const [datasets, setDatasets] = useState<ChartDataset<"line">[]>([]);
-  const [visibleDatasets, setVisibleDatasets] = useState<
-    ChartDataset<"line">[]
-  >([]);
+  const [datasets, setDatasets] = useState<LineDataset[]>([]);
+  const [visibleDatasets, setVisibleDatasets] = useState<LineDataset[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialFetch, setIsInitialFetch] = useState(true);
   const [defaultDate, setDefaultDate] = useState(new Date());
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      if (isLoading || !isInitialFetch) return;
-
+  const fetchLatestData = useCallback(
+    async (
+      visibleDatasetConverstion: (dataset: LineDataset) => LineDataset,
+      gran?: PowerConsumptionDataGranularity
+    ) => {
+      if (isLoading) return;
       setIsLoading(true);
-      const newData = await getLatestPowerConsumptionData(granularity);
 
-      // Set default timestamp to open the date picker at the correct location
-      if (newData && newData.count > 0) {
-        if (newData.granularity === "hour") {
-          const last = newData.data[newData.count - 1];
-          setDefaultDate(new Date(last.timestampStart));
-        } else {
-          const last = newData.data[newData.count - 1];
-          setDefaultDate(new Date(last.timestamp));
-        }
+      const result = await getLatestPowerConsumptionData(gran ?? granularity);
+
+      // If it is the first time data is fetched, set default timestamp to open the date picker at the correct time
+      if (isInitialFetch) {
+        setDefaultDate(getDefaultDateForSelectorFromDataset(result));
+        setIsInitialFetch(false);
       }
 
-      setIsInitialFetch(false);
-      if (newData) {
-        const newDatasets = powerConsumptionDataToChartDataset(newData);
+      if (result) {
+        const newDatasets = powerConsumptionDataToChartDataset(result);
         setDatasets(newDatasets);
-        setVisibleDatasets(newDatasets.map(datasetToVisibleDataset));
+        setVisibleDatasets(newDatasets.map(visibleDatasetConverstion));
       }
       setIsLoading(false);
-    };
+    },
+    [granularity, isInitialFetch, isLoading]
+  );
 
-    fetchInitialData();
-  }, [granularity, isLoading, isInitialFetch]);
+  useEffect(() => {
+    if (isLoading || !isInitialFetch) return;
 
+    fetchLatestData(datasetToVisibleDataset);
+  }, [isLoading, isInitialFetch, fetchLatestData]);
+
+  /**
+   * Fetch additional data from either the left or the right side of the currently fetched data.
+   * After fetching the data, the function removes far away data from the fetched data to improve performance
+   * 
+   * @param when determines if the data is fetched from before or after the currently fetched data
+   */
   const fetchAdditionalData = async (
     when: "before" | "after", // Fetch data from before or after the current data
     visibleMinX: number,
@@ -128,42 +140,26 @@ const usePowerConsumptionData = (
     setIsLoading(false);
   };
 
-  const fetchLatestData = async (gran: PowerConsumptionDataGranularity) => {
-    setIsLoading(true);
-
-    const newData = await getLatestPowerConsumptionData(gran);
-    if (newData) {
-      const newDatasets = powerConsumptionDataToChartDataset(newData);
-      setDatasets(newDatasets);
-      setVisibleDatasets(
-        newDatasets.map((ds) => {
-          return { ...ds, data: ds.data.slice(-MAX_VISIBLE_DATAPOINT_COUNT) };
-        })
-      );
-    }
-
-    setIsLoading(false);
-  };
-
   const addLatestDatapoint = async (data: PowerConsumptionData) => {
-    setDatasets((prev) =>
-      prev.map((ds, index) => {
-        // Remove first value if there are many stored to improve performance
-        if (ds.data.length > 2 * MAX_VISIBLE_DATAPOINT_COUNT) {
-          ds.data.shift();
-        }
-        ds.data.push(powerConsumptionDataToChartData(data, index));
-        return { ...ds };
-      })
+    setDatasets((ds) =>
+      addDatapointToDataset(
+        ds,
+        (l) => l > 2 * MAX_VISIBLE_DATAPOINT_COUNT,
+        data
+      )
     );
 
-    setVisibleDatasets((prev) =>
-      prev.map((ds, index) => {
-        if (ds.data.length >= MAX_VISIBLE_DATAPOINT_COUNT) {
-          ds.data.shift();
-        }
-        ds.data.push(powerConsumptionDataToChartData(data, index));
-        return { ...ds };
+    setVisibleDatasets((ds) =>
+      addDatapointToDataset(ds, (l) => l >= MAX_VISIBLE_DATAPOINT_COUNT, data)
+    );
+  };
+
+  const setVisibleDatasetsFromMinX = (minX: number) => {
+    setVisibleDatasets(
+      datasets.map((ds) => {
+        const points = ds.data as Point[];
+        const data = minFilter(points, minX, MAX_VISIBLE_DATAPOINT_COUNT);
+        return { ...ds, data };
       })
     );
   };
@@ -177,7 +173,7 @@ const usePowerConsumptionData = (
     fetchData,
     fetchLatestData,
     fetchAdditionalData,
-    setVisibleDatasets,
+    setVisibleDatasetsFromMinX,
     addLatestDatapoint,
   };
 };

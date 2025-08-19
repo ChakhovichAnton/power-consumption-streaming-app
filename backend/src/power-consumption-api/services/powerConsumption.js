@@ -4,7 +4,7 @@ export const getDatesWithData = async (startISOString, endISOString) => {
   const query = `
   SELECT DISTINCT DATE(timestamp) AS date_with_data
   FROM power_consumption_data
-  WHERE timestamp >= $1 AND timestamp <  $2
+  WHERE timestamp >= $1 AND timestamp < $2
   ORDER BY date_with_data;`;
 
   return await postgrePool.query(query, [startISOString, endISOString]);

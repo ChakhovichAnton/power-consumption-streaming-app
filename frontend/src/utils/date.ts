@@ -1,3 +1,5 @@
+import type { PowerConsumptionResult } from "../types";
+
 export const getMonthRange = (date: Date) => {
   const year = date.getFullYear();
   const month = date.getMonth();
@@ -16,4 +18,21 @@ export const newDateWithADayAdded = (date: Date) => {
 
 export const getUtcMidnight = (date: Date) => {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+};
+
+export const getDefaultDateForSelectorFromDataset = (
+  result?: PowerConsumptionResult
+) => {
+  if (result && result.count > 0) {
+    const lastIndex = result.count - 1;
+
+    if (result.granularity === "hour") {
+      const last = result.data[lastIndex];
+      return new Date(last.timestampStart);
+    }
+    const last = result.data[lastIndex];
+    return new Date(last.timestamp);
+  }
+
+  return new Date(); // Default to current date
 };
